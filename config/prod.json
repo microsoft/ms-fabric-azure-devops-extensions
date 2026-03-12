@@ -1,0 +1,6 @@
+{
+    "$schema": "./schemas/override-schema.json",
+    "id": "fabric-automation-tools",
+    "public": true,
+    "name": "Fabric automation tools"
+}

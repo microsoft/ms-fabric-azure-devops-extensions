@@ -1,0 +1,168 @@
+{
+    "manifestVersion": 1,
+    "id": "fabric-automation-tools-dev",
+    "publisher": "ms-fabric-api",
+    "version": "0.3.43",
+    "name": "Fabric automation tools",
+    "description": "Fabric public api automation tools",
+    "public": false,
+    "targets": [
+        {
+            "id": "Microsoft.VisualStudio.Services"
+        }
+    ],
+    "categories": [
+        "Azure Pipelines"
+    ],
+    "tags": [
+        "Fabric"
+    ],
+    "branding": {
+        "color": "#F3F2F1",
+        "theme": "light"
+    },
+    "icons": {
+        "default": "Icons/icon.png"
+    },
+    "screenshots": [
+        {
+            "path": "Screenshots/Tasks.png"
+        }
+    ],
+    "content": {
+        "details": {
+            "path": "overview.md"
+        },
+        "license": {
+            "path": "LICENSE"
+        }
+    },
+    "links": {
+        "getstarted": {
+            "uri": ""
+        },
+        "repository": {
+            "uri": "https://github.com/microsoft/???"
+        },
+        "support": {
+            "uri": "https://github.com/microsoft/???/issues"
+        },
+        "issues": {
+            "uri": "https://github.com/microsoft/???/issues"
+        }
+    },
+    "repository": {
+        "type": "git",
+        "uri": "https://github.com/microsoft/???"
+    },
+    "contributions": [
+        {
+            "id": "Run_Fabric_CLI",
+            "type": "ms.vss-distributed-task.task",
+            "targets": [
+                "ms.vss-distributed-task.tasks"
+            ],
+            "properties": {
+                "name": "Tasks/Run_Fabric_CLI"
+            }
+        },
+        {
+            "id": "fabric-service-endpoint",
+            "description": "Service endpoint for Fabric",
+            "type": "ms.vss-endpoint.service-endpoint-type",
+            "icons": {
+                "default": "Icons/icon.png"
+            },
+            "targets": [
+                "ms.vss-endpoint.endpoint-types"
+            ],
+            "properties": {
+                "name": "FabricService",
+                "displayName": "Fabric",
+                "inputDescriptors": [
+                    {
+                        "id": "Environment",
+                        "name": "Environment",
+                        "description": "Environment",
+                        "inputMode": "combo",
+                        "validation": {
+                            "isRequired": true
+                        },
+                        "values": {
+                            "inputId": "Environments",
+                            "defaultValue": "AzureCloud",
+                            "possibleValues": [
+                                {
+                                    "displayValue": "AzureCloud",
+                                    "value": "AzureCloud"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "url": {
+                    "isVisible": "false",
+                    "dependsOn": {
+                        "input": "Environment",
+                        "map": [
+                            {
+                                "key": "AzureCloud",
+                                "value": "https://api.fabric.microsoft.com"
+                            }
+                        ]
+                    }
+                },
+                "authenticationSchemes": [
+                    {
+                        "type": "ms.vss-endpoint.endpoint-auth-scheme-managed-service-identity",
+                        "displayName": "User Assigned Managed Identity",
+                        "inputDescriptors": [
+                            {
+                                "description": "Id of the user assigned Managed Identity",
+                                "id": "tenantid",
+                                "inputMode": "TextBox",
+                                "isConfidential": false,
+                                "name": "Client Id",
+                                "useInDefaultDescription": true,
+                                "validation": {
+                                    "inputDataType": "Guid",
+                                    "isRequired": true
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "type": "ms.vss-endpoint.endpoint-auth-scheme-none",
+                        "displayName": "System Assigned Managed Identity"
+                    },
+                    {
+                        "type": "ms.vss-endpoint.endpoint-auth-scheme-service-principal",
+                        "displayName": "Service Principal",
+                        "inputDescriptors": [
+                            {
+                                "id": "authenticationType",
+                                "name": "Authentication type",
+                                "inputMode": "RadioButtons",
+                                "values": {
+                                    "inputId": "authenticationType",
+                                    "defaultValue": "spnKey",
+                                    "isDisabled": false,
+                                    "possibleValues": [
+                                        {
+                                            "value": "spnKey"
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "files": [
+        {
+            "path": "Tasks/Run_Fabric_CLI"
+        }
+    ]
+}
