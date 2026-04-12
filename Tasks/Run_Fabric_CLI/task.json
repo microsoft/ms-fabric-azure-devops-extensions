@@ -1,0 +1,112 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
+    "id": "07d75991-3df6-4a8f-8018-99b35c2ec0b0",
+    "name": "FabricCLI",
+    "friendlyName": "Fabric CLI",
+    "description": "Run commands in the Fabric CLI",
+    "helpMarkDown": "",
+    "category": "Utility",
+    "author": "Microsoft",
+    "version": {
+        "Major": 0,
+        "Minor": 1,
+        "Patch": 0
+    },
+    "demands": [
+        "powershell"
+    ],
+    "instanceNameFormat": "Run commands in the Fabric CLI",
+    "inputs": [
+        {
+            "name": "fabricConnection",
+            "type": "connectedService:FabricService",
+            "label": "Fabric service connection",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": "if fabric service connection is not provided, authentication mode will be detected from environment variables. For details see [Environment Variables](https://microsoft.github.io/fabric-cli/essentials/env_vars/?h=en)."
+        },
+        {
+            "name": "scriptType",
+            "type": "pickList",
+            "label": "Script type",
+            "defaultValue": "",
+            "required": true,
+            "helpMarkDown": "Type of script: PowerShell/PowerShell Core/Bat/Shell script. Select Shell/PowerShell Core script when running on Linux agent or Batch/PowerShell/PowerShell Core script when running on Windows agent. PowerShell Core script can run on cross-platform agents (Linux, macOS, or Windows).",
+            "options": {
+                "ps": "PowerShell",
+                "pscore": "PowerShell Core",
+                "batch": "Batch",
+                "bash": "Shell"
+            }
+        },
+        {
+            "name": "scriptLocation",
+            "type": "pickList",
+            "label": "Script location",
+            "defaultValue": "scriptPath",
+            "required": true,
+            "helpMarkDown": "Path to script: File path or Inline script",
+            "options": {
+                "inlineScript": "Inline script",
+                "scriptPath": "Script path"
+            }
+        },
+        {
+            "name": "scriptPath",
+            "type": "filePath",
+            "label": "Script Path",
+            "defaultValue": "",
+            "required": true,
+            "visibleRule": "scriptLocation = scriptPath",
+            "helpMarkDown": "Fully qualified path of the script(.ps1 or .bat or .cmd when using Windows based agent) or a path relative to the the default working directory"
+        },
+        {
+            "name": "inlineScript",
+            "type": "multiLine",
+            "label": "Inline Script",
+            "defaultValue": "",
+            "required": true,
+            "visibleRule": "scriptLocation = inlineScript",
+            "helpMarkDown": "You can write your scripts inline here. When using Windows agent, use PowerShell or batch scripting. You can also pass predefined and custom variables to this script using arguments \n\n example for PowerShell: \naz --version \naz account show \n\n example for batch:\ncall  az --version \ncall az account show",
+            "properties": {
+                "resizable": true,
+                "rows": "10",
+                "maxLength": "5000"
+            }
+        },
+        {
+            "name": "scriptArguments",
+            "type": "string",
+            "label": "Script Arguments",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": "Arguments passed to the script. please enter arguments with a space between them. example: var1 var2 var3"
+        },
+        {
+            "name": "FabricCLIVersion",
+            "type": "pickList",
+            "label": "Fabric CLI Version",
+            "defaultValue": "v1.2.0",
+            "required": true,
+            "helpMarkDown": "Fabric CLI version installation (latest (v1.2.0) or specific version)",
+            "options": {
+                "v1.2.0": "(latest) v1.2.0",
+                "v1.1.0": "v1.1.0"
+            }
+        },
+        {
+            "name": "FabricCLIEncryption",
+            "type": "boolean",
+            "label": "Fabric CLI Encryption FallBack Enabled Configuration.",
+            "defaultValue": "false",
+            "required": false,
+            "helpMarkDown": "The CLI cannot run on Linux unless the checkbox is selected. For configuration details, see [Enable/Disable Encryption Fallback](https://microsoft.github.io/fabric-cli/examples/config_examples/#enabledisable-encryption-fallback).",
+            "visibleRule": "scriptType = pscore || scriptType = bash"
+        }
+    ],
+    "execution": {
+        "Node20_1": {
+            "target": "index.js"
+        }
+    }
+}
