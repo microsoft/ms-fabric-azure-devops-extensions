@@ -1,49 +1,156 @@
-<table><tr>
-<td><img src="./Icons/icon.png"/></td>
-<td><strong>Fabric automation tools for Azure DevOps</strong><br/>
-<i>Automate workspace management and deployment tasks for Microsoft Fabric</i><br/>
-<a href="https://marketplace.visualstudio.com/items?itemName=ms-fabric-api.fabric-automation-tools">Install now!</a>
-</td>
-</tr></table>
+# Microsoft Fabric Extension for Azure DevOps
 
-# Fabric automation tools for Azure DevOps
-The Microsoft Fabric automation tools enable teams to build efficient and reusable release processes for their Fabric workspace and item management. You can leverage the tasks in this Azure DevOps extension to integrate Fabric operations into your organization's automation process. Here are a few examples of what can be done using this extension:
-- Execute custom Fabric CLI commands across multiple platforms
-- Automate Fabric item lifecycle management
+The **Microsoft Fabric Extension for Azure DevOps** brings first-class Fabric automation directly into your ADO pipelines. It adds the `FabricCLI@0` task, which automatically provisions the [Fabric CLI (`fab`)](https://aka.ms/fabriccli) into the pipeline agent — no manual installation required.
 
-## Build
-You can use the [build.ps1](./build.ps1) script to build and package the extesnion.
+Use it to provision workspaces, deploy items, manage Git integration, trigger deployment pipelines, and fully automate your Fabric CI/CD workflows.
 
-If you are forking this Repo make sure to update the [dev.json](./config/dev.json).
+---
 
-`
- .\build.ps1
-`
+## Quick Start
 
-after building for the first time, you can use the following command to skip installing powrshell modules and reduce build time:
+1. **Install the extension** from the [Azure DevOps Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-fabric-api.fabric-automation-tools-dev)
+2. **Create a variable group** named `FabricSecrets` in ADO → Pipelines → Library:
 
-`
- .\build.ps1 -SkipModules
-`
+   | Variable | Description | Secret? |
+   |---|---|---|
+   | `FAB_SPN_CLIENT_ID` | Service principal / managed identity client ID | No |
+   | `FAB_TENANT_ID` | Microsoft Entra tenant ID | No |
+   | `FAB_CAPACITY_NAME` | Target Fabric capacity name | No |
 
-## Contributing	
+   > **Note:** No secrets are stored in the variable group. Authentication uses [workload identity federation](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/configure-workload-identity) — the federated token is generated at pipeline runtime.
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a	
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us	
-the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.	
+3. **Add the task** to your pipeline YAML:
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide	
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions	
-provided by the bot. You will only need to do this once across all repos using our CLA.	
+```yaml
+variables:
+  - group: FabricSecrets
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).	
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or	
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.	
+steps:
+  # Generate a federated token from the ADO workload identity service connection.
+  # See: https://learn.microsoft.com/en-us/azure/devops/pipelines/release/configure-workload-identity
+  - task: Bash@3
+    displayName: 'Generate Federated Token'
+    inputs:
+      filePath: './generate-federated-token.sh'
 
-## Trademarks	
+  - task: FabricCLITask@0
+    displayName: 'Create Fabric Workspace'
+    env:
+      FAB_SPN_CLIENT_ID: $(FAB_SPN_CLIENT_ID)
+      FAB_TENANT_ID: $(FAB_TENANT_ID)
+      FAB_SPN_FEDERATED_TOKEN: $(FEDERATED_TOKEN)
+    inputs:
+      scriptType: inlineScript
+      FabricCLIVersion: V1.5.0  
+      inlineScript: |
+        fab mkdir "MyWorkspace.Workspace" -P capacityname=$FAB_CAPACITY_NAME
+```
 
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft 	
-trademarks or logos is subject to and must follow 	
-[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).	
-Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.	
-Any use of third-party trademarks or logos are subject to those third-party's policies.	
+See [Get started](doc/getting_started.md) for a complete walkthrough.
+
+---
+
+## Features
+
+- **Zero-setup Fabric CLI** — the `fab` CLI is automatically provisioned by the task; no `pip install` needed.
+- **Multi-platform scripting** — supports PowerShell, PowerShell Core, Bash, and Batch script types.
+- **Inline or file-based scripts** — embed commands directly in YAML or point to a `.ps1`/`.sh` file in your repo.
+- **Workspace management** — create, configure, and assign Fabric workspaces to capacities.
+- **Item deployment** — publish notebooks, lakehouses, semantic models, pipelines, and more.
+- **Git integration** — connect workspaces to ADO Git, commit changes, and sync from branches.
+- **Deployment pipelines** — trigger stage promotions (Dev → Test → Prod) from CI/CD.
+- **Version-pinned CLI** — pin a specific `FabricCLIVersion` for deterministic, reproducible builds.
+
+---
+
+## Task Reference
+
+The extension provides one task: `FabricCLITask@0`.
+
+| Input | Type | Required | Description |
+| --- | --- | --- | --- |
+| `scriptLanguage` | string | Yes | `ps`, `pscore`, `bash`, `batch` |
+| `scriptType` | string | Yes | `inlineScript`, `scriptPath` |
+| `inlineScript` | string | When `scriptType: inlineScript` | Script content embedded in YAML |
+| `scriptPath` | string | When using file path | Path to `.ps1`, `.sh`, or `.bat` in source |
+| `FabricCLIVersion` | string | Yes | Pin CLI version, e.g. `v1.5.0`. |
+
+Full reference: [doc/task_reference.md](doc/task_reference.md)
+
+---
+
+## Documentation
+
+| Guide | Description |
+| --- | --- |
+| [Get Started](doc/getting_started.md) | Installation, authentication, first pipeline |
+| [Task Reference](doc/task_reference.md) | All `FabricCLITask@0` inputs and options |
+| [Samples](doc/samples.md) | End-to-end YAML pipeline examples |
+| [Permissions](doc/permissions.md) | Required roles and identity setup |
+| Guide | Description |
+| --- | --- |
+| [Troubleshooting](doc/troubleshooting.md) | Common errors and fixes |
+| [CLI Automation (Blog)](doc/fabric_cli_automation.md) | Deep-dive: zero-friction CI/CD with the Fabric CLI |
+
+---
+
+## Usage
+
+**Inline script example (Bash):**
+
+```yaml
+- task: Bash@3
+  displayName: 'Generate Federated Token'
+  inputs:
+    filePath: './generate-federated-token.sh'
+    FabricCLIVersion: V1.5.0
+    
+
+- task: FabricCLITask@0
+  env:
+    FAB_SPN_CLIENT_ID: $(FAB_SPN_CLIENT_ID)
+    FAB_TENANT_ID: $(FAB_TENANT_ID)
+    FAB_SPN_FEDERATED_TOKEN: $(FEDERATED_TOKEN)
+  inputs:
+    scriptType: inlineScript
+    inlineScript:
+      fab ls
+      fab mkdir "Dev-Workspace.Workspace" -P capacityname=$FAB_CAPACITY_NAME
+```
+
+**Script file example (PowerShell Core):**
+```yaml
+- task: FabricCLITask@0
+  inputs:
+    scriptType: inline
+    scriptLanguage: pscore
+    scriptPath: '$(Build.SourcesDirectory)/scripts/deploy-fabric.ps1'
+    FabricCLIVersion: 'v1.5.0'
+```
+
+For help on any Fabric CLI command, [Fabric CLI (`fab`) documentation](https://aka.ms/fabriccli)
+
+---
+
+## Contribute
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report bugs and request features.
+
+- **Questions:** [Stack Overflow — tag `microsoft-fabric`](https://stackoverflow.com/questions/tagged/microsoft-fabric)
+- **Bug reports:** [Issues](https://github.com/microsoft/fabric-ado-extension/issues)
+- **Feature requests:** [Issues → Feature Request](https://github.com/microsoft/fabric-ado-extension/issues/new/choose)
+
+---
+
+## License
+
+[MIT License](LICENSE)
+
+---
+
+## Related Resources
+
+- [Microsoft Fabric REST API](https://learn.microsoft.com/rest/api/fabric/)
+- [Fabric CLI (`fab`) documentation](https://aka.ms/fabriccli)
+- [Microsoft Fabric CI/CD documentation](https://learn.microsoft.com/fabric/cicd/)
+- [Azure DevOps Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-pbi-api.pbi-publicapi-ado-extension)

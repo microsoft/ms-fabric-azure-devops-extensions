@@ -1,7 +1,6 @@
 Param(
     [switch]$Prod,
     [switch]$SkipModules,
-    [switch]$UpdateVersion,
     [switch]$RunTests
 )
 

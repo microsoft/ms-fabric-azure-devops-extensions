@@ -1,5 +1,3 @@
-Copy-Item -Recurse -Force -Path .\FabricApiUtils -Destination .\Common\ps_modules
-
 Get-ChildItem -Directory .\Tasks | ForEach-Object {
     $taskName = $_.Name
     $taskPath = ".\Tasks\$taskName"

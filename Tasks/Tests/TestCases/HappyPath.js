@@ -419,7 +419,7 @@ function testHappyPath(byDisplayName) {
     console.log('Initializing Fabric CLI with service principal connection...');
     
     try {
-        initializeCLI('v1.2.0', FabricConnection, FabricCLIEncryption = true);
+        initializeCLI('v1.5.0', FabricConnection);
         console.log('CLI initialization completed successfully');
     } catch (err) {
         console.error('CLI initialization failed:', err.message);
