@@ -1,5 +1,6 @@
 Param(
     [string] $ModulesConfigPath,
+    [string] $NpmrcPath,
     [string] $installMode = "NodeOnly" # Options: "All", "PSOnly", "NodeOnly" 
     # currently, only "NodeOnly" is used
 )
@@ -71,8 +72,11 @@ if ($installMode -eq "All" -or $installMode -eq "NodeOnly") {
         Write-Host "Installing Node module: $moduleName@$moduleVersion"
         
         try {
-            # Use cmd.exe to run npm for better compatibility on Windows
-            $process = Start-Process -FilePath "cmd.exe" -ArgumentList @("/c", "npm", "install", "$moduleName@$moduleVersion", "--prefix", $tempNodePath) -NoNewWindow -Wait -PassThru
+            $npmArgs = @("/c", "npm", "install", "$moduleName@$moduleVersion", "--prefix", $tempNodePath)
+            if ($NpmrcPath) {
+                $npmArgs += @("--userconfig", $NpmrcPath)
+            }
+            $process = Start-Process -FilePath "cmd.exe" -ArgumentList $npmArgs -NoNewWindow -Wait -PassThru
             
             if ($process.ExitCode -ne 0) {
                 throw "npm install failed with exit code $($process.ExitCode)"

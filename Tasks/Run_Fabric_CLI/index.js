@@ -1,74 +1,70 @@
 const tl = require('azure-pipelines-task-lib/task');
 const { initializeCLI } = require('./cli-init');
 const { invokeFabricCLI } = require('./cli-core');
-const { disconnectFabricCLI } = require('./cli-utils');
 
-class fabricServiceConnection {
-    constructor(authScheme, tenantId, servicePrincipalId, servicePrincipalKey) {
-        this._authScheme = authScheme;
-        this._tenantId = tenantId;
-        this._servicePrincipalId = servicePrincipalId;
-        this._servicePrincipalKey = servicePrincipalKey;
+// Fabric CLI environment variables used for authentication
+// See: https://microsoft.github.io/fabric-cli/essentials/env_vars/
+const FABRIC_AUTH_ENV_VARS = [
+    'FAB_TOKEN',
+    'FAB_TOKEN_ONELAKE',
+    'FAB_TOKEN_AZURE',
+    'FAB_TENANT_ID',
+    'FAB_SPN_CLIENT_ID',
+    'FAB_SPN_CLIENT_SECRET',
+    'FAB_SPN_CERT_PATH',
+    'FAB_SPN_CERT_PASSWORD',
+    'FAB_SPN_FEDERATED_TOKEN',
+    'FAB_MANAGED_IDENTITY',
+];
+
+async function cleanupFabricCLIState() {
+    // Log out of the current Fabric CLI session
+    try {
+        const logoutTool = tl.tool(tl.which('fab', true));
+        logoutTool.arg(['auth', 'logout']);
+        await logoutTool.execAsync({ failOnStdErr: false, ignoreReturnCode: true });
+    } catch (err) {
+        tl.warning(`Failed to logout from Fabric CLI: ${err.message}`);
     }
 
-    authScheme() {
-        return this._authScheme;
-    }       
-    tenantId() {
-        return this._tenantId;
+    // Clear environment variables that may contain auth state
+    for (const envVar of FABRIC_AUTH_ENV_VARS) {
+        if (process.env[envVar]) {
+            process.env[envVar] = '';
+        }
     }
-    servicePrincipalId() {
-        return this._servicePrincipalId;
-    }
-    servicePrincipalKey() {
-        return this._servicePrincipalKey;
+
+    // Disable context persistence to prevent auth context leaking to subsequent tasks
+    try {
+        const configTool = tl.tool(tl.which('fab', true));
+        configTool.arg(['config', 'set', 'context_persistence_enabled', 'false']);
+        await configTool.execAsync({ failOnStdErr: false, ignoreReturnCode: true });
+    } catch (err) {
+        tl.warning(`Failed to disable context persistence: ${err.message}`);
     }
 }
 
 async function run() {
     try {
-        // Get Fabric Connection
-        const fabricConnectionName = tl.getInput('fabricConnection', false);
-        let fabricConnection = null;
-        if(fabricConnectionName){
-            const authScheme = tl.getEndpointAuthorizationScheme(fabricConnectionName, true);
-            if (authScheme === 'ServicePrincipal') {
-                const tenantId = tl.getEndpointAuthorizationParameter(fabricConnectionName, 'TenantId', true);
-                const servicePrincipalId = tl.getEndpointAuthorizationParameter(fabricConnectionName, 'Serviceprincipalid', true);
-                const servicePrincipalKey = tl.getEndpointAuthorizationParameter(fabricConnectionName, 'Serviceprincipalkey', true);
-                fabricConnection = new fabricServiceConnection(authScheme, tenantId, servicePrincipalId, servicePrincipalKey);
-            }
-            else if (authScheme === 'None') {
-                // For system assigned managed identity, no parameters are needed
-                fabricConnection = new fabricServiceConnection(authScheme, null, null, null);
-            }
-            else if (authScheme === 'ManagedIdentity') {
-                // User assigned managed identity.
-                const clientId = tl.getEndpointAuthorizationParameter(fabricConnectionName, 'ClientId', true);
-                fabricConnection = new fabricServiceConnection(authScheme, clientId, null, null);
-            }
-        }
-
         // Get Other Script Inputs
-        const scriptType = tl.getInput('scriptType', true);
+        const scriptLanguage = tl.getInput('scriptLanguage', true);
         const scriptPath = tl.getInput('scriptPath', false);
         const inlineScript = tl.getInput('inlineScript', false);
         const scriptArguments = tl.getInput('scriptArguments', false);
         const fabricCLIVersion = tl.getInput('FabricCLIVersion', false);
-        const fabricCLIEncryption = tl.getInput('FabricCLIEncryption', false);
 
         // Initialize CLI
-        initializeCLI(fabricCLIVersion, fabricConnection, fabricCLIEncryption );
+        initializeCLI(fabricCLIVersion);
         
         // Execute Fabric CLI
-        invokeFabricCLI(scriptType, inlineScript, scriptPath, scriptArguments);
+        await invokeFabricCLI(scriptLanguage, inlineScript, scriptPath, scriptArguments);
         
-        // Disconnect
-        disconnectFabricCLI();
         tl.setResult(tl.TaskResult.Succeeded, 'Task completed successfully');
 
     } catch (err) {
         tl.setResult(tl.TaskResult.Failed, err.message);
+    } finally {
+        await cleanupFabricCLIState();
     }
 }
 

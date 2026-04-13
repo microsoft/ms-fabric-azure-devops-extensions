@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "fabric-automation-tools-dev",
     "publisher": "ms-fabric-api",
-    "version": "0.3.43",
+    "version": "0.1.0",
     "name": "Fabric automation tools",
     "description": "Fabric public api automation tools",
     "public": false,
@@ -39,21 +39,21 @@
     },
     "links": {
         "getstarted": {
-            "uri": ""
+            "path": "doc/getting_started.md"
         },
         "repository": {
-            "uri": "https://github.com/microsoft/???"
+            "uri": "https://github.com/microsoft/ms-fabric-azure-devops-extensions"
         },
         "support": {
-            "uri": "https://github.com/microsoft/???/issues"
+            "path": "SUPPORT.md"
         },
         "issues": {
-            "uri": "https://github.com/microsoft/???/issues"
+            "path": "SECURITY.md"
         }
     },
     "repository": {
         "type": "git",
-        "uri": "https://github.com/microsoft/???"
+        "uri": "https://github.com/microsoft/ms-fabric-azure-devops-extensions"
     },
     "contributions": [
         {
@@ -64,99 +64,6 @@
             ],
             "properties": {
                 "name": "Tasks/Run_Fabric_CLI"
-            }
-        },
-        {
-            "id": "fabric-service-endpoint",
-            "description": "Service endpoint for Fabric",
-            "type": "ms.vss-endpoint.service-endpoint-type",
-            "icons": {
-                "default": "Icons/icon.png"
-            },
-            "targets": [
-                "ms.vss-endpoint.endpoint-types"
-            ],
-            "properties": {
-                "name": "FabricService",
-                "displayName": "Fabric",
-                "inputDescriptors": [
-                    {
-                        "id": "Environment",
-                        "name": "Environment",
-                        "description": "Environment",
-                        "inputMode": "combo",
-                        "validation": {
-                            "isRequired": true
-                        },
-                        "values": {
-                            "inputId": "Environments",
-                            "defaultValue": "AzureCloud",
-                            "possibleValues": [
-                                {
-                                    "displayValue": "AzureCloud",
-                                    "value": "AzureCloud"
-                                }
-                            ]
-                        }
-                    }
-                ],
-                "url": {
-                    "isVisible": "false",
-                    "dependsOn": {
-                        "input": "Environment",
-                        "map": [
-                            {
-                                "key": "AzureCloud",
-                                "value": "https://api.fabric.microsoft.com"
-                            }
-                        ]
-                    }
-                },
-                "authenticationSchemes": [
-                    {
-                        "type": "ms.vss-endpoint.endpoint-auth-scheme-managed-service-identity",
-                        "displayName": "User Assigned Managed Identity",
-                        "inputDescriptors": [
-                            {
-                                "description": "Id of the user assigned Managed Identity",
-                                "id": "tenantid",
-                                "inputMode": "TextBox",
-                                "isConfidential": false,
-                                "name": "Client Id",
-                                "useInDefaultDescription": true,
-                                "validation": {
-                                    "inputDataType": "Guid",
-                                    "isRequired": true
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "type": "ms.vss-endpoint.endpoint-auth-scheme-none",
-                        "displayName": "System Assigned Managed Identity"
-                    },
-                    {
-                        "type": "ms.vss-endpoint.endpoint-auth-scheme-service-principal",
-                        "displayName": "Service Principal",
-                        "inputDescriptors": [
-                            {
-                                "id": "authenticationType",
-                                "name": "Authentication type",
-                                "inputMode": "RadioButtons",
-                                "values": {
-                                    "inputId": "authenticationType",
-                                    "defaultValue": "spnKey",
-                                    "isDisabled": false,
-                                    "possibleValues": [
-                                        {
-                                            "value": "spnKey"
-                                        }
-                                    ]
-                                }
-                            }
-                        ]
-                    }
-                ]
             }
         }
     ],

@@ -1,6 +1,4 @@
-const { createScriptFile, stripArguments } = require('./cli-utils');
-const { spawnSync } = require('child_process');
-const he = require('he');
+const { createScriptFile } = require('./cli-utils');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
@@ -9,7 +7,34 @@ const tl = require('azure-pipelines-task-lib/task');
 const WINDOWS = 'win32';
 const LINUX = 'linux';
 
-function invokeFabricCLI(scriptType, inlineScript, scriptPath, scriptArguments = '') {
+/**
+ * Creates a PowerShell wrapper script that dot-sources the user's script with arguments.
+ * This avoids embedding user arguments in the -Command string, preventing injection.
+ */
+function createPowerShellWrapper(scriptPath, scriptArguments) {
+    const tempDir = tl.getVariable('Agent.TempDirectory') || os.tmpdir();
+    const wrapperPath = path.join(tempDir, `fabricclitask_${Date.now()}.ps1`);
+
+    const contents = [];
+    let content = `. '${scriptPath.replace(/'/g, "''")}'`;
+    if (scriptArguments) {
+        content += ` ${scriptArguments}`;
+    }
+    contents.push(content);
+
+    // Propagate exit code from the user script
+    contents.push(`if (!(Test-Path -LiteralPath variable:\\LASTEXITCODE)) {`);
+    contents.push(`    Write-Host '##vso[task.debug]$LASTEXITCODE is not set.'`);
+    contents.push(`} else {`);
+    contents.push(`    Write-Host ('##vso[task.debug]$LASTEXITCODE: {0}' -f $LASTEXITCODE)`);
+    contents.push(`    exit $LASTEXITCODE`);
+    contents.push(`}`);
+
+    fs.writeFileSync(wrapperPath, '\ufeff' + contents.join(os.EOL), { encoding: 'utf8', mode: 0o600 });
+    return wrapperPath;
+}
+
+async function invokeFabricCLI(scriptLanguage, inlineScript, scriptPath, scriptArguments = '') {
     const operatingSystem = os.platform();
     
     if(operatingSystem != WINDOWS &&  operatingSystem != LINUX) {
@@ -24,7 +49,7 @@ function invokeFabricCLI(scriptType, inlineScript, scriptPath, scriptArguments =
     const config = {
         ps: {
             extension: 'ps1',
-            command: 'powershell.exe'
+            command: 'powershell'
         },
         pscore: {
             extension: 'ps1',
@@ -40,9 +65,9 @@ function invokeFabricCLI(scriptType, inlineScript, scriptPath, scriptArguments =
         }
     };
 
-    const typeConfig = config[scriptType];
+    const typeConfig = config[scriptLanguage];
     if (!typeConfig) {
-        throw new Error(`Unsupported script type: ${scriptType}`);
+        throw new Error(`Unsupported script type: ${scriptLanguage}`);
     }
 
     const defaultDir = tl.getVariable('System.DefaultWorkingDirectory');
@@ -51,10 +76,13 @@ function invokeFabricCLI(scriptType, inlineScript, scriptPath, scriptArguments =
     }
 
     const scriptToRun = createScriptFile(inlineScript, scriptPath, typeConfig.extension);
-    const argsArray = stripArguments(scriptArguments);
+    let wrapperScriptPath = null;
 
     try {
-        switch (scriptType) {
+        let tool;
+        let exitCode;
+
+        switch (scriptLanguage) {
             case 'ps': {
                 if(operatingSystem !== WINDOWS) {  
                     throw new Error([
@@ -64,48 +92,35 @@ function invokeFabricCLI(scriptType, inlineScript, scriptPath, scriptArguments =
                         "Fix: Switch to a supported environment and try again."
                     ].join('\n'));
                 }
-                const psArgs = [
-                    '-NoProfile',
-                    '-NonInteractive',
-                    '-ExecutionPolicy', 'Bypass',
-                    '-Command',
-                    `& { & '${scriptToRun}' ${argsArray.join(' ')}; exit $LASTEXITCODE }`
-                ];
+
+                wrapperScriptPath = createPowerShellWrapper(scriptToRun, scriptArguments);
+
+                tool = tl.tool(tl.which('powershell', true))
+                    .arg('-NoLogo')
+                    .arg('-NoProfile')
+                    .arg('-NonInteractive')
+                    .arg('-ExecutionPolicy Unrestricted')
+                    .arg('-Command')
+                    .arg(`. '${wrapperScriptPath.replace(/'/g, "''")}'`);
 
                 console.log(`Running PowerShell Fabric CLI script`);
-
-                const output = spawnSync('powershell.exe', psArgs, { encoding: 'utf-8' });
-
-                if (output.status !== 0) {
-                    throw new Error(`Script execution failed with exit code ${output.status}:\n${output.stdout}`);
-                }
-
-                const decodedOutput = he.decode(output.stdout);
-                console.log(`Output:\n${decodedOutput}`);
+                exitCode = await tool.execAsync({ failOnStdErr: false, ignoreReturnCode: true });
                 break;
             }
 
-            
             case 'pscore': {
-                // PowerShell Core is cross-platform, so no Windows-only check
-                const psArgs = [
-                    '-NoProfile',
-                    '-NonInteractive',
-                    '-ExecutionPolicy', 'Bypass',
-                    '-Command',
-                    `& { & '${scriptToRun}' ${argsArray.join(' ')}; exit $LASTEXITCODE }`
-                ];
+                wrapperScriptPath = createPowerShellWrapper(scriptToRun, scriptArguments);
+
+                tool = tl.tool(tl.which('pwsh', true))
+                    .arg('-NoLogo')
+                    .arg('-NoProfile')
+                    .arg('-NonInteractive')
+                    .arg('-ExecutionPolicy Unrestricted')
+                    .arg('-Command')
+                    .arg(`. '${wrapperScriptPath.replace(/'/g, "''")}'`);
 
                 console.log(`Running PowerShell Core Fabric CLI script`);
-
-                const output = spawnSync('pwsh', psArgs, { encoding: 'utf-8' });
-
-                if (output.status !== 0) {
-                    throw new Error(`Script execution failed with exit code ${output.status}:\n${output.stdout}`);
-                }
-
-                const decodedOutput = he.decode(output.stdout);
-                console.log(`Output:\n${decodedOutput}`);
+                exitCode = await tool.execAsync({ failOnStdErr: false, ignoreReturnCode: true });
                 break;
             }
 
@@ -118,25 +133,15 @@ function invokeFabricCLI(scriptType, inlineScript, scriptPath, scriptArguments =
                         "Fix: Switch to a supported environment and try again."
                     ].join('\n'));
                 }
-                const batchArgs = [
-                    '/c', // tells cmd to run and exit
-                    `${scriptToRun} ${argsArray.join(' ')}` // script name + arguments
-                ];
+
+                tool = tl.tool(tl.which(scriptToRun, true));
+                tool.line(scriptArguments || '');
 
                 console.log(`Running Batch Fabric CLI script`);
-
-                const output = spawnSync('cmd.exe', batchArgs, { encoding: 'utf-8' });
-
-                if (output.status !== 0) {
-                    throw new Error(`Script execution failed with exit code ${output.status}:\n${output.stdout}`);
-                }
-
-                const decodedOutput = he.decode(output.stdout);
-                console.log(`Output:\n${decodedOutput}`);
+                exitCode = await tool.execAsync({ failOnStdErr: false, ignoreReturnCode: true });
                 break;
             }
 
-            
             case 'bash': {
                 if(operatingSystem !== LINUX) {
                     throw new Error([
@@ -146,33 +151,37 @@ function invokeFabricCLI(scriptType, inlineScript, scriptPath, scriptArguments =
                         "Fix: Switch to a supported environment and try again."
                     ].join('\n'));
                 }
-                const bashArgs = [scriptToRun, ...argsArray];
+
+                tool = tl.tool(tl.which('bash', true));
+                tool.arg(scriptToRun);
+                tool.line(scriptArguments || '');
 
                 console.log(`Running Bash Fabric CLI script`);
-
-                const output = spawnSync('bash', bashArgs, { encoding: 'utf-8' });
-
-                if (output.status !== 0) {
-                    throw new Error(`Script execution failed with exit code ${output.status}:\n${output.stdout}`);
-                }
-
-                const decodedOutput = he.decode(output.stdout);
-                console.log(`Output:\n${decodedOutput}`);
+                exitCode = await tool.execAsync({ failOnStdErr: false, ignoreReturnCode: true });
                 break;
             }
 
             default:
-                throw new Error(`Unsupported script type: ${scriptType}`);
+                throw new Error(`Unsupported script type: ${scriptLanguage}`);
         }
-    } catch (err) {
-        const decodedErrorMessage = he.decode(err.message || err.toString());
-        const decodedError = new Error(decodedErrorMessage);
-        decodedError.stack = err.stack;
-        throw decodedError;
+
+        if (exitCode !== 0) {
+            throw new Error(`Script execution failed with exit code ${exitCode}`);
+        }
     } finally {
-        // Clean up temp file after execution
+        // Clean up wrapper script
+        if (wrapperScriptPath && fs.existsSync(wrapperScriptPath)) {
+            fs.unlinkSync(wrapperScriptPath);
+        }
+        // Clean up temp directory and file after execution
         if (inlineScript && fs.existsSync(scriptToRun)) {
+            const tempDir = path.dirname(scriptToRun);
+            // Remove the script file
             fs.unlinkSync(scriptToRun);
+            // Remove the temporary directory if it starts with 'fabric-'
+            if (path.basename(tempDir).startsWith('fabric-')) {
+                fs.rmdirSync(tempDir);
+            }
         }
     }
 }
