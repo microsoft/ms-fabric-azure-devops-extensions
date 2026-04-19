@@ -39,16 +39,10 @@
     },
     "links": {
         "getstarted": {
-            "path": "doc/getting_started.md"
-        },
-        "repository": {
-            "uri": "https://github.com/microsoft/ms-fabric-azure-devops-extensions"
+            "uri": "https://github.com/microsoft/ms-fabric-azure-devops-extensions/blob/main/Docs/getting_started.md"
         },
         "support": {
-            "path": "SUPPORT.md"
-        },
-        "issues": {
-            "path": "SECURITY.md"
+            "uri": "https://github.com/microsoft/ms-fabric-azure-devops-extensions/blob/main/SUPPORT.md"
         }
     },
     "repository": {
