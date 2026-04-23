@@ -1,6 +1,6 @@
 {
     "manifestVersion": 1,
-    "id": "fabric-automation-tools-dev",
+    "id": "fabric-automation-tools-ext",
     "publisher": "ms-fabric-api",
     "version": "0.1.0",
     "name": "Fabric automation tools",

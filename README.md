@@ -8,7 +8,7 @@ Use it to provision workspaces, deploy items, manage Git integration, trigger de
 
 ## Quick Start
 
-1. **Install the extension** from the [Azure DevOps Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-fabric-api.fabric-automation-tools-dev)
+1. **Install the extension** from the [Azure DevOps Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-fabric-api.fabric-automation-tools-ext)
 2. **Create a variable group** named `FabricSecrets` in ADO → Pipelines → Library:
 
    | Variable | Description | Secret? |
@@ -153,4 +153,4 @@ See [SUPPORT.md](SUPPORT.md) for how to report bugs and request features.
 - [Microsoft Fabric REST API](https://learn.microsoft.com/rest/api/fabric/)
 - [Fabric CLI (`fab`) documentation](https://aka.ms/fabriccli)
 - [Microsoft Fabric CI/CD documentation](https://learn.microsoft.com/fabric/cicd/)
-- [Azure DevOps Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-fabric-api.fabric-automation-tools-dev)
+- [Azure DevOps Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-fabric-api.fabric-automation-tools-ext)
