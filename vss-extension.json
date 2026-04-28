@@ -1,11 +1,11 @@
 {
     "manifestVersion": 1,
-    "id": "fabric-automation-tools-ext",
+    "id": "fabric-automation-tools",
     "publisher": "ms-fabric-api",
     "version": "0.1.0",
     "name": "Fabric automation tools",
     "description": "Fabric public api automation tools",
-    "public": false,
+    "public": true,
     "targets": [
         {
             "id": "Microsoft.VisualStudio.Services"
