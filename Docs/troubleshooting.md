@@ -1,28 +1,10 @@
 # Troubleshooting Common Errors
 
-This page covers the most frequent errors encountered when using the `FabricCLITask@0` task and how to resolve them.
+This page covers the most frequent errors encountered when using the `FabricCLI@0` task and how to resolve them.
 
 ---
 
 ## Authentication Errors
-
-### `Error: Authentication failed — invalid or expired token`
-
-**Cause:** The federated token is expired, malformed, or the `generate-federated-token.sh` step did not run successfully.
-
-**Fix:**
-1. Verify the workload identity service connection is correctly configured in ADO → Project Settings → Service connections.
-2. Ensure the `Bash@3` federated token generation step runs **before** the `FabricCLITask@0` step.
-3. Confirm you're injecting credentials via the `env:` block — not expanding them inline:
-   ```yaml
-   env:
-     FAB_SPN_CLIENT_ID: $(FAB_SPN_CLIENT_ID)
-     FAB_TENANT_ID: $(FAB_TENANT_ID)
-     FAB_SPN_FEDERATED_TOKEN: $(FEDERATED_TOKEN)   # ✅
-   ```
-4. For troubleshooting, see [Troubleshoot workload identity service connections](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/troubleshoot-workload-identity).
-
----
 
 ### `Error: 403 Forbidden` when calling Fabric APIs
 
@@ -56,7 +38,7 @@ This page covers the most frequent errors encountered when using the `FabricCLIT
 inputs:
   scriptType: pscore     # or bash, ps, batch, inlineScript
   inlineScript: |
-    fab auth login -u $env:FAB_SPN_CLIENT_ID --federated-token $env:FAB_SPN_FEDERATED_TOKEN --tenant $env:FAB_TENANT_ID
+    fab ls
 ```
 
 ---
@@ -66,7 +48,7 @@ inputs:
 **Cause:** The `scriptPath` references a file that doesn't exist in the checked-out source.
 
 **Fix:**
-1. Ensure you have a `- checkout: self` step **before** the `FabricCLITask@0` step.
+1. Ensure you have a `- checkout: self` step **before** the `FabricCLI@0` step.
 2. Verify the file path is correct relative to the repository root.
 3. Check that the file is committed and pushed to the branch triggering the pipeline.
 
@@ -84,11 +66,11 @@ inputs:
 
 ### `fab: command not found`
 
-**Cause:** The Fabric CLI was not provisioned by the task — typically caused by using `PowerShell@2` or `Bash@3` tasks directly instead of `FabricCLITask@0`.
+**Cause:** The Fabric CLI was not provisioned by the task — typically caused by using `PowerShell@2` or `Bash@3` tasks directly instead of `FabricCLI@0`.
 
-**Fix:** Use the `FabricCLITask@0` task. The CLI is automatically installed only when this task is used:
+**Fix:** Use the `FabricCLI@0` task. The CLI is automatically installed only when this task is used:
 ```yaml
-- task: FabricCLITask@0   # ✅ CLI auto-installed
+- task: FabricCLI@0   # ✅ CLI auto-installed
   ...
 # NOT:
 # - task: PowerShell@2    # ❌ No CLI available
@@ -131,17 +113,6 @@ inputs:
    variables:
      - group: FabricSecrets
    ```
-
----
-
-### `$(FAB_SPN_FEDERATED_TOKEN)` appears as literal text in logs
-
-**Cause:** The federated token variable was not correctly set by the `Bash@3` generation step, or the step did not run.
-
-**Fix:**
-1. Ensure the `generate-federated-token.sh` script sets the `FEDERATED_TOKEN` variable correctly using `##vso[task.setvariable]`.
-2. Verify the `Bash@3` step runs successfully before the `FabricCLITask@0` step.
-3. See [Troubleshoot workload identity service connections](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/troubleshoot-workload-identity) for details.
 
 ---
 

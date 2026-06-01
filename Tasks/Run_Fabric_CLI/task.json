@@ -78,17 +78,28 @@
             "name": "FabricCLIVersion",
             "type": "pickList",
             "label": "Fabric CLI Version",
-            "defaultValue": "v1.5.0",
+            "defaultValue": "v1.6.1",
             "required": true,
             "helpMarkDown": "Fabric CLI version installation",
             "options": {
-                "v1.5.0": "v1.5.0"
+                "v1.5.0": "v1.5.0",
+                "v1.6.1": "v1.6.1"
             }
         }
     ],
+    "prejobexecution": {
+        "Node20_1": {
+            "target": "host-app-setup.js"
+        }
+    },
     "execution": {
         "Node20_1": {
             "target": "index.js"
+        }
+    },
+    "postjobexecution": {
+        "Node20_1": {
+            "target": "host-app-cleanup.js"
         }
     }
 }

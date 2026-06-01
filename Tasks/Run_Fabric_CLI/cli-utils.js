@@ -4,11 +4,12 @@ const os = require('os');
 const path = require('path');
 
 
-const SUPPORTED_VERSIONS = new Set(["v1.5.0"]);
+const SUPPORTED_VERSIONS = new Set(["v1.5.0", "v1.6.1"]);
 
 // SHA256 hashes of the expected wheel files from PyPI for each supported version
 const VERSION_HASHES = {
-    "v1.5.0": "sha256:18b9377eb73c4477ba0cb94bb9b578b6efd7e903125f68e7fe9668116e69b3b3"
+    "v1.5.0": "sha256:18b9377eb73c4477ba0cb94bb9b578b6efd7e903125f68e7fe9668116e69b3b3",
+    "v1.6.1": "sha256:a088338ec51539d04b9c2ee9816f1a000da5c39f5e0f9381e8703832b68aa768"
 };
 
 function installFabricCLIDeps(version) {

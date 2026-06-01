@@ -1,6 +1,6 @@
 # Microsoft Fabric Extension for Azure DevOps
 
-The **Microsoft Fabric Extension for Azure DevOps** brings first-class Fabric automation directly into your ADO pipelines. It adds the `FabricCLITask@0` task, which automatically provisions the [Fabric CLI (`fab`)](https://aka.ms/fabriccli) into the pipeline agent — no manual installation required.
+The **Microsoft Fabric Extension for Azure DevOps** brings first-class Fabric automation directly into your ADO pipelines. It adds the `FabricCLI@0` task, which automatically provisions the [Fabric CLI (`fab`)](https://aka.ms/fabriccli) into the pipeline agent — no manual installation required.
 
 Use it to provision workspaces, deploy items, manage Git integration, trigger deployment pipelines, and fully automate your Fabric CI/CD workflows.
 
@@ -40,7 +40,7 @@ steps:
     inputs:
       filePath: './generate-federated-token.sh'
 
-  - task: FabricCLITask@0
+  - task: FabricCLI@0
     displayName: 'Create Fabric Workspace'
     env:
       FAB_SPN_CLIENT_ID: $(FAB_SPN_CLIENT_ID)
@@ -54,7 +54,7 @@ steps:
 
 ## Task Reference
 
-The extension provides one task: `FabricCLITask@0`.
+The extension provides one task: `FabricCLI@0`.
 
 | Input | Type | Required | Description |
 |---|---|---|---|

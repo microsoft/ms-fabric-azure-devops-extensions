@@ -53,26 +53,17 @@ The pipeline uses a workload identity service connection to generate a federated
 1. In ADO, go to **Project Settings → Service connections → New service connection**
 2. Select **Azure Resource Manager** and choose **Workload Identity federation (automatic)** or **Managed Identity**
 3. Name the connection `FabricServiceConnection`
-4. Grant the identity the necessary permissions to perform the actions you want in the pipeline" or something like that.
+4. Grant the identity the necessary permissions to perform the actions you want in the pipeline.
 
 See [Permissions](permissions.md) for the full role reference.
 
-> **Federated token generation:** The federated token is generated at pipeline runtime using a `Bash@3` step that calls `generate-federated-token.sh`. Add this step before the `FabricCLITask@0` task:
->
-> ```yaml
-> - task: Bash@3
->   displayName: 'Generate Federated Token'
->   inputs:
->     filePath: './generate-federated-token.sh'
-> ```
->
-> See [Set up a workload identity service connection](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/configure-workload-identity) and [Troubleshoot workload identity](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/troubleshoot-workload-identity) for details.
+> **Federated token generation:** In order to authenticate to the FabricCLI you will need to provide an Oidc token generated using the federated identity. For more information see: [Set up a workload identity service connection](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/configure-workload-identity) and [Troubleshoot workload identity](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/troubleshoot-workload-identity) for details.
 
 ---
 
 ## 4 — Add the Task to Your Pipeline
 
-The `FabricCLITask@0` task automatically installs the Fabric CLI (`fab`) on the agent — **no pip install step is required**.
+The `FabricCLI@0` task automatically installs the Fabric CLI (`fab`) on the agent — **no pip install step is required**.
 
 ### Minimal example
 
@@ -80,18 +71,13 @@ The `FabricCLITask@0` task automatically installs the Fabric CLI (`fab`) on the 
 trigger: none
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'windows-latest'
 
 variables:
   - group: FabricSecrets
 
 steps:
-  - task: Bash@3
-    displayName: 'Generate Federated Token'
-    inputs:
-      filePath: './generate-federated-token.sh'
-
-  - task: FabricCLITask@0
+  - task: FabricCLI@0
     displayName: 'Log in to Fabric and list workspaces'
     env:
       FAB_SPN_CLIENT_ID: $(FAB_SPN_CLIENT_ID)
@@ -121,60 +107,12 @@ env:
 
 ---
 
-## 5 — End-to-End Example: Provision a Workspace
-
-```yaml
-trigger: none
-
-parameters:
-  - name: workspaceName
-    displayName: 'Workspace display name'
-    type: string
-    default: 'MyFabricWorkspace'
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-variables:
-  - group: FabricSecrets
-
-stages:
-  - stage: ProvisionWorkspace
-    displayName: 'Provision Fabric Workspace'
-    jobs:
-      - job: CreateAndAssign
-        displayName: 'Create workspace and assign to capacity'
-        steps:
-          - task: Bash@3
-            displayName: 'Generate Federated Token'
-            inputs:
-              filePath: './generate-federated-token.sh'
-
-          - task: FabricCLITask@0
-            displayName: 'Create Fabric Workspace'
-            env:
-              FAB_SPN_CLIENT_ID: $(FAB_SPN_CLIENT_ID)
-              FAB_TENANT_ID: $(FAB_TENANT_ID)
-              FAB_SPN_FEDERATED_TOKEN: $(FEDERATED_TOKEN)
-            inputs:
-              scriptType: inlineScript
-              CLIversion: 'V1.5.0'
-              inlineScript:
-                $ErrorActionPreference = 'Stop'
-
-                Write-Host "##[group]Creating workspace..."
-                fab mkdir "${{ parameters.workspaceName }}.Workspace" -P capacityname="$(FAB_CAPACITY_NAME)"
-                Write-Host "##[endgroup]"
-```
-
----
-
-## 6 — Verify the Configuration
+## 5 — Verify the Configuration
 
 After the pipeline runs:
 
 1. Open [app.fabric.microsoft.com](https://app.fabric.microsoft.com)
-2. You should see the new workspace in **My workspaces** or the capacity's workspace list
+2. Verify that the listed workspaces match what is present in the portal
 3. Check the ADO pipeline logs — each `fab` command logs its output
 
 ---
@@ -183,7 +121,7 @@ After the pipeline runs:
 
 | Guide | Description |
 |---|---|
-| [Task Reference](task_reference.md) | All `FabricCLITask@0` inputs and script types |
+| [Task Reference](task_reference.md) | All `FabricCLI@0` inputs and script types |
 | [Samples](samples.md) | Git integration, deployment pipelines, multi-stage examples |
 | [Permissions](permissions.md) | Full role and permission reference |
 | [Troubleshooting](troubleshooting.md) | Common errors and fixes |

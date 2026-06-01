@@ -17,7 +17,7 @@ Use it to provision workspaces, deploy items, manage Git integration, trigger de
    | `FAB_TENANT_ID` | Microsoft Entra tenant ID | No |
    | `FAB_CAPACITY_NAME` | Target Fabric capacity name | No |
 
-   > **Note:** No secrets are stored in the variable group. Authentication uses [workload identity federation](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/configure-workload-identity) — the federated token is generated at pipeline runtime.
+   > **Note:** No secrets are stored in the variable group. Authentication uses [workload identity federation](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/configure-workload-identity) — the federated token will need to be provided at pipeline runtime.
 
 3. **Add the task** to your pipeline YAML:
 
@@ -26,14 +26,9 @@ variables:
   - group: FabricSecrets
 
 steps:
-  # Generate a federated token from the ADO workload identity service connection.
+  # A federated token from the ADO workload identity service connection will be required for authentication.
   # See: https://learn.microsoft.com/en-us/azure/devops/pipelines/release/configure-workload-identity
-  - task: Bash@3
-    displayName: 'Generate Federated Token'
-    inputs:
-      filePath: './generate-federated-token.sh'
-
-  - task: FabricCLITask@0
+  - task: FabricCLI@0
     displayName: 'Create Fabric Workspace'
     env:
       FAB_SPN_CLIENT_ID: $(FAB_SPN_CLIENT_ID)
@@ -65,7 +60,7 @@ See [Get started](Docs/getting_started.md) for a complete walkthrough.
 
 ## Task Reference
 
-The extension provides one task: `FabricCLITask@0`.
+The extension provides one task: `FabricCLI@0`.
 
 | Input | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -84,7 +79,7 @@ Full reference: [Docs/task_reference.md](Docs/task_reference.md)
 | Guide | Description |
 | --- | --- |
 | [Get Started](Docs/getting_started.md) | Installation, authentication, first pipeline |
-| [Task Reference](Docs/task_reference.md) | All `FabricCLITask@0` inputs and options |
+| [Task Reference](Docs/task_reference.md) | All `FabricCLI@0` inputs and options |
 | [Samples](Docs/samples.md) | End-to-end YAML pipeline examples |
 | [Permissions](Docs/permissions.md) | Required roles and identity setup |
 | Guide | Description |
@@ -99,14 +94,7 @@ Full reference: [Docs/task_reference.md](Docs/task_reference.md)
 **Inline script example (Bash):**
 
 ```yaml
-- task: Bash@3
-  displayName: 'Generate Federated Token'
-  inputs:
-    filePath: './generate-federated-token.sh'
-    FabricCLIVersion: V1.5.0
-    
-
-- task: FabricCLITask@0
+- task: FabricCLI@0
   env:
     FAB_SPN_CLIENT_ID: $(FAB_SPN_CLIENT_ID)
     FAB_TENANT_ID: $(FAB_TENANT_ID)
@@ -120,7 +108,7 @@ Full reference: [Docs/task_reference.md](Docs/task_reference.md)
 
 **Script file example (PowerShell Core):**
 ```yaml
-- task: FabricCLITask@0
+- task: FabricCLI@0
   inputs:
     scriptType: inline
     scriptLanguage: pscore
