@@ -2,21 +2,6 @@ const tl = require('azure-pipelines-task-lib/task');
 const { initializeCLI } = require('./cli-init');
 const { invokeFabricCLI } = require('./cli-core');
 
-// Fabric CLI environment variables used for authentication
-// See: https://microsoft.github.io/fabric-cli/essentials/env_vars/
-const FABRIC_AUTH_ENV_VARS = [
-    'FAB_TOKEN',
-    'FAB_TOKEN_ONELAKE',
-    'FAB_TOKEN_AZURE',
-    'FAB_TENANT_ID',
-    'FAB_SPN_CLIENT_ID',
-    'FAB_SPN_CLIENT_SECRET',
-    'FAB_SPN_CERT_PATH',
-    'FAB_SPN_CERT_PASSWORD',
-    'FAB_SPN_FEDERATED_TOKEN',
-    'FAB_MANAGED_IDENTITY',
-];
-
 async function cleanupFabricCLIState() {
     // Log out of the current Fabric CLI session
     try {
@@ -25,13 +10,6 @@ async function cleanupFabricCLIState() {
         await logoutTool.execAsync({ failOnStdErr: false, ignoreReturnCode: true });
     } catch (err) {
         tl.warning(`Failed to logout from Fabric CLI: ${err.message}`);
-    }
-
-    // Clear environment variables that may contain auth state
-    for (const envVar of FABRIC_AUTH_ENV_VARS) {
-        if (process.env[envVar]) {
-            process.env[envVar] = '';
-        }
     }
 
     // Disable context persistence to prevent auth context leaking to subsequent tasks

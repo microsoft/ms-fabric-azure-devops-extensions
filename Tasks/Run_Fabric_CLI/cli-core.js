@@ -99,7 +99,8 @@ async function invokeFabricCLI(scriptLanguage, inlineScript, scriptPath, scriptA
                     .arg('-NoLogo')
                     .arg('-NoProfile')
                     .arg('-NonInteractive')
-                    .arg('-ExecutionPolicy Unrestricted')
+                    .arg('-ExecutionPolicy')
+                    .arg('Unrestricted')
                     .arg('-Command')
                     .arg(`. '${wrapperScriptPath.replace(/'/g, "''")}'`);
 
@@ -115,7 +116,8 @@ async function invokeFabricCLI(scriptLanguage, inlineScript, scriptPath, scriptA
                     .arg('-NoLogo')
                     .arg('-NoProfile')
                     .arg('-NonInteractive')
-                    .arg('-ExecutionPolicy Unrestricted')
+                    .arg('-ExecutionPolicy')
+                    .arg('Unrestricted')
                     .arg('-Command')
                     .arg(`. '${wrapperScriptPath.replace(/'/g, "''")}'`);
 

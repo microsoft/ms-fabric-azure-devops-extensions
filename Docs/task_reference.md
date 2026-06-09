@@ -1,13 +1,13 @@
-# FabricCLITask@0 — Task Reference
+# FabricCLI@0 — Task Reference
 
-The `FabricCLITask@0` task is the core task provided by the Microsoft Fabric Extension for Azure DevOps. It automatically provisions the Fabric CLI (`fab`) into the pipeline agent and executes your script.
+The `FabricCLI@0` task is the core task provided by the Microsoft Fabric Extension for Azure DevOps. It automatically provisions the Fabric CLI (`fab`) into the pipeline agent and executes your script.
 
 ---
 
 ## Syntax
 
 ```yaml
-- task: FabricCLITask@0
+- task: FabricCLI@0
   displayName: 'string'         # optional label in pipeline logs
   env:
     FAB_SPN_CLIENT_ID: $(FAB_SPN_CLIENT_ID)
@@ -33,9 +33,9 @@ Controls the scripting language and runner used to execute the script.
 | Value | Language | Agent OS |
 | --- | --- | --- |
 | `ps` or `powershell` | Windows PowerShell | Windows |
-  | `pscore` | PowerShell Core (`pwsh`) | Windows, Linux, macOS |
-  | `bash` or `sh` | Bash / Shell | Linux, macOS |
-  | `batch` | Windows Batch (`.bat`) | Windows only |
+| `pscore` | PowerShell Core (`pwsh`) | Windows, Linux, macOS |
+| `bash` or `sh` | Bash / Shell | Linux, macOS |
+| `batch` | Windows Batch (`.bat`) | Windows only |
 
 **Recommendation:** Use `pscore` for cross-platform pipelines so the same YAML runs on Windows and Linux agents without modification.
 
@@ -50,7 +50,6 @@ inputs:
   scriptType: inLine
   scriptLanguage: pscore
   inlineScript: |
-    fab auth login -u $env:FAB_SPN_CLIENT_ID --federated-token $env:FAB_SPN_FEDERATED_TOKEN --tenant $env:FAB_TENANT_ID
     fab ls
 ```
 
@@ -62,7 +61,7 @@ Path to a script file in the repository. The file extension must match the `scri
 
 ```yaml
 inputs:
-  scriptType:filePath
+  scriptType: filePath
   scriptLanguage: pscore
   scriptPath: '$(Build.SourcesDirectory)/scripts/deploy-fabric.ps1'
 ```
@@ -88,27 +87,7 @@ inputs:
 
 You authenticate inside your script using `fab auth login`or, preferably, by using environment variables in the task/pipeline setup.
 
-### Federated token authentication
-
-Authenticate using a federated token from a workload identity service connection:
-
-```powershell
-# Federated token credentials are injected via the env: block
-fab auth login -u $env:FAB_SPN_CLIENT_ID --federated-token $env:FAB_SPN_FEDERATED_TOKEN --tenant $env:FAB_TENANT_ID
-```
-
-### Token acquisition (Bash@3)
-
-Use a `Bash@3` task to generate a federated token from your workload identity service connection. The token is passed to the `FabricCLITask@0` via the `env:` block.
-
-```yaml
-- task: Bash@3
-  displayName: 'Generate Federated Token'
-  inputs:
-    filePath: './generate-federated-token.sh'
-```
-
-> **Prerequisites:** Configure a [workload identity service connection](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/configure-workload-identity) in your ADO project. For troubleshooting, see [Troubleshoot workload identity service connections](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/troubleshoot-workload-identity).
+For more information on authentication in the FabricCLI see: [Authentication Methods](https://microsoft.github.io/fabric-cli/#authentication-methods) and [Environment Variables](https://microsoft.github.io/fabric-cli/essentials/env_vars/)
 
 ---
 

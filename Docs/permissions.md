@@ -1,6 +1,6 @@
 # Permissions and Service Connection Setup
 
-This page describes the Azure and Fabric permissions required for the `FabricCLITask@0` to operate in your pipelines.
+This page describes the Azure and Fabric permissions required for the `FabricCLI@0` to operate in your pipelines.
 
 ---
 
@@ -24,15 +24,6 @@ An Azure DevOps administrator must create a service connection once per project:
 
 > See [Set up a workload identity service connection](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/configure-workload-identity) for detailed setup instructions.
 > For troubleshooting, see [Troubleshoot workload identity service connections](https://learn.microsoft.com/en-us/azure/devops/pipelines/release/troubleshoot-workload-identity).
->
-> If your environment requires a federated token generation step, add it before the `FabricCLITask@0` task in your pipeline:
->
-> ```yaml
-> - task: Bash@3
->   displayName: 'Generate Federated Token'
->   inputs:
->     filePath: './generate-federated-token.sh'
-> ```
 
 ---
 
